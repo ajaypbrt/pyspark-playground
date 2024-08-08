@@ -2,14 +2,13 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, explode, lower, regexp_extract, split
 
 import os
-print(os.environ['PYSPARK_PYTHON'])
-print(os.environ['PYSPARK_DRIVER_PYTHON'])
-
+os.environ['PYSPARK_PYTHON'] = "./environment/bin/python"
 spark = SparkSession.builder.appName(
     "Ch02 - Analyzing the vocabulary of Pride and Prejudice."
+).config(
+    "spark.archives",
+    "/opt/spark/data/brtdl.tar.gz#environment"
 ).getOrCreate()
-
-import mlflow
 
 book = spark.read.text("/opt/spark/data/pride-and-prejudice.txt")
 

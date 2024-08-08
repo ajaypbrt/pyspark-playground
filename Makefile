@@ -42,7 +42,9 @@ stop-yarn:
 
 
 submit:
-	docker exec da-spark-master spark-submit --master spark://spark-master:7077 --deploy-mode client ./apps/$(app)
+	docker exec -e PYSPARK_DRIVER_PYTHON=python -e PYSPARK_PYTHON=./environment/bin/python da-spark-master \
+	spark-submit --archives /opt/spark/data/brtdl.tar.gz#environment --master spark://spark-master:7077 --deploy-mode client \
+	./apps/$(app)
 
 submit-da-book:
 	make submit app=data_analysis_book/$(app)
