@@ -1,4 +1,4 @@
-FROM python:3.10-bullseye as spark-base
+FROM python:3.10-bullseye as pyspark
 
 ARG SPARK_VERSION=3.3.3
 
@@ -8,6 +8,7 @@ RUN apt-get update && \
       sudo \
       curl \
       vim \
+      less \
       unzip \
       rsync \
       openjdk-11-jdk \
@@ -30,8 +31,10 @@ RUN curl https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SP
  && tar xvzf spark-${SPARK_VERSION}-bin-hadoop3.tgz --directory /opt/spark --strip-components 1 \
  && rm -rf spark-${SPARK_VERSION}-bin-hadoop3.tgz
 
-
-FROM spark-base as pyspark
+RUN curl https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip \
+ && unzip awscliv2.zip \
+ && ./aws/install \
+ && rm -rf awscliv2.zip
 
 # Install python deps
 COPY requirements/requirements.txt .
