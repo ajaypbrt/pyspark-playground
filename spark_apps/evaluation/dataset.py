@@ -19,6 +19,7 @@ import base64
 import json
 from brtdl.data.labelmap import add_ground_label, generate_correspondence_map, validate_remap_compatibility
 from brtdl.data._sync_labelmap import labelmap_remap
+from brtdl.data import SampleKeys
 
 # Custom pyspark type containing numpy bytes and the dtype + dimensions of the image
 PySparkNumpyType = StructType([
@@ -117,8 +118,15 @@ class NpzPackager(Transformer, Identifiable, HasOutputCol):
         def pack_npz(image_data, annotation_data):
             image = pyspark_to_numpy(image_data)
             annotation = pyspark_to_numpy(annotation_data)
-            return (numpy_to_pyspark(annotation), annotation_labelmap)
-        pack_npz_udf = udf(lambda annotation_data, annotation_labelmap: pack_npz(annotation_data, annotation_labelmap), AnnotationType())
+            sample = {
+                SampleKeys.image: image,
+                SampleKeys.label: annotation
+            }
+            bytes_io = io.BytesIO()
+            np.savez_compressed(bytes_io, **sample)
+            return base64.b64encode(bytes_io.getvalue()).decode('utf-8')
+        pack_npz_udf = udf(lambda annotation_data, annotation_labelmap: pack_npz(annotation_data, annotation_labelmap), StringType())
+        return dataset.withColumn(self.getOutputCol(), pack_npz_udf(dataset["annotation"], dataset["labelmap"]))
 
 
 class ImageDimensionExtractor(Transformer, Identifiable, HasInputCol, HasOutputCol):
@@ -160,6 +168,9 @@ spark_df = anno_download.transform(spark_df)
 
 labelmap_sync = LabelmapSync(to_labelmap=ds.labelmap, correspondence_map=ds.correspondence_map, fix_ground=True)
 spark_df = labelmap_sync.transform(spark_df)
+
+npz_packager = NpzPackager(outputCol='nrg_annotation')
+spark_df = npz_packager.transform(spark_df)
 
 dimension_extractor = ImageDimensionExtractor(inputCol='nrg', outputCol='nrg_dimension')
 spark_df = dimension_extractor.transform(spark_df)
