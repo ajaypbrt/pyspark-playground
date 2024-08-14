@@ -42,7 +42,7 @@ stop-yarn:
 
 
 submit:
-	docker exec -e PYSPARK_DRIVER_PYTHON=python -e PYSPARK_PYTHON=./environment/bin/python da-spark-master \
+	docker exec -e PYSPARK_DRIVER_PYTHON=python -e PYSPARK_PYTHON=./environment/bin/python -e AWS_PROFILE=brt_aws_shasta_prod da-spark-master \
 	bash -c \
 	"source /opt/spark/data/brtdl_env/bin/activate && \
 	spark-submit --archives /opt/spark/data/brtdl.tar.gz#environment --master spark://spark-master:7077 --deploy-mode client \
